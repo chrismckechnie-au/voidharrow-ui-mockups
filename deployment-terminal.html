@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<!--
+  VOIDHARROW EXTRACTION — DEPLOYMENT TERMINAL MOCKUP
+  The out-of-run workspace (CONTEXT.md): Operator choice, loadout, Armament
+  Stash (24 slots, shared), seed selection, deploy. Recovery Vessel frame.
+  Structure: three-column terminal — Operators | Loadout detail | Stash + Deploy.
+  Palette: premium_ui_skin.gd exact constants. All primitives are panel /
+  hairline border / flex — direct UI Toolkit translation.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VHX — Deployment Terminal</title>
+<style>
+  :root{
+    --bg:#0a0c10; --panel:#10141b; --elev:#141a23; --void:#161226; --line:#232c39;
+    --acc:#46e2b2; --warn:#ffb454; --surge:#c77dff; --danger:#ff5d6c;
+    --ok:#8af49e; --txt:#e6ecf3; --mut:#8a97a8; --ink:#05261c;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1600px;height:900px;overflow:hidden;font-family:"Segoe UI","Inter",system-ui,sans-serif;
+    color:var(--txt);background:
+      radial-gradient(1000px 600px at 70% 20%, #12161f 0%, transparent 60%),
+      radial-gradient(700px 500px at 15% 85%, #100e1c 0%, transparent 55%),
+      var(--bg)}
+  .mono{font-family:"Cascadia Mono","Consolas",monospace}
+
+  /* shell */
+  .shell{display:flex;flex-direction:column;height:100%;padding:18px 22px;gap:14px}
+  header{display:flex;align-items:center;gap:20px;border-bottom:1px solid var(--line);padding-bottom:12px}
+  .logo{font-size:15px;letter-spacing:.34em}
+  .logo b{color:var(--acc)}
+  .crumb{font-size:10px;letter-spacing:.2em;color:var(--mut)}
+  .crumb b{color:var(--txt)}
+  .hright{margin-left:auto;display:flex;gap:14px;align-items:center;font-size:10px;letter-spacing:.16em;color:var(--mut)}
+  .statusdot{width:8px;height:8px;background:var(--ok);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+
+  main{flex:1;display:grid;grid-template-columns:300px 1fr 380px;gap:14px;min-height:0}
+  .col{display:flex;flex-direction:column;gap:12px;min-height:0}
+  .panel{background:#10141bd4;border:1px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:10px;min-height:0}
+  .ptitle{font-size:10px;letter-spacing:.28em;color:var(--mut);border-bottom:1px solid #232c3966;padding-bottom:8px}
+  .ptitle b{color:var(--txt)}
+
+  /* operator cards */
+  .opcard{border:1px solid var(--line);background:#141a2380;padding:12px;display:flex;gap:12px;
+    align-items:center;cursor:default}
+  .opcard.sel{border-color:var(--acc);background:#141a23e6;box-shadow:0 0 18px #46e2b222, inset 0 0 0 1px #46e2b244}
+  .opglyph{width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;
+    font-size:13px;letter-spacing:.1em;color:var(--acc);border:1px solid #46e2b255;
+    clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);background:#0a0c10}
+  .opcard:not(.sel) .opglyph{color:var(--mut);border-color:var(--line)}
+  .opname{font-size:13px;letter-spacing:.18em}
+  .oprole{font-size:10px;color:var(--mut);margin-top:3px;letter-spacing:.06em}
+  .optraits{display:flex;gap:6px;margin-top:7px}
+  .trait{font-size:8.5px;letter-spacing:.12em;color:var(--acc);border:1px solid #46e2b233;
+    padding:2px 6px;background:#46e2b20d}
+  .opcard:not(.sel) .trait{color:var(--mut);border-color:#232c39;background:transparent}
+
+  /* loadout center */
+  .silhouette{flex:1;display:flex;align-items:center;justify-content:center;position:relative;
+    border:1px dashed #232c3988;min-height:200px;background:
+      radial-gradient(300px 180px at 50% 50%, #141a2388, transparent)}
+  .silhouette .fig{font-size:64px;color:#232c39;letter-spacing:0}
+  .equip{position:absolute;display:flex;align-items:center;gap:8px;font-size:10px;letter-spacing:.1em;
+    background:#0a0c10d0;border:1px solid var(--line);padding:6px 10px}
+  .equip b{color:var(--txt);font-weight:600}
+  .equip .mod{color:var(--surge);font-size:9px}
+  .equip .issued{color:var(--mut);font-size:8.5px;letter-spacing:.16em;border:1px solid #232c39;padding:1px 5px}
+  .e-primary{left:24px;top:24px;border-left:2px solid var(--acc)}
+  .e-melee{right:24px;top:24px;border-right:2px solid var(--acc)}
+  .e-shield{left:24px;bottom:24px;border-left:2px solid var(--surge)}
+
+  /* weapon detail card under silhouette */
+  .wdetail{border:1px solid var(--line);background:#141a23c0;padding:12px}
+  .wdetail .wn{font-size:14px;letter-spacing:.16em}
+  .wdetail .wr{font-size:10px;color:var(--mut);margin-top:2px}
+  .wdetail .wr em{color:var(--acc);font-style:normal}
+  .stats{display:grid;grid-template-columns:auto 1fr auto;gap:5px 10px;margin-top:10px;align-items:center}
+  .sl{font-size:9px;letter-spacing:.18em;color:var(--mut)}
+  .sbar{height:5px;background:#1a2230;position:relative}
+  .sbar i{position:absolute;inset:0 auto 0 0;background:var(--acc)}
+  .sv{font-size:9px;color:var(--txt)}
+  .bullets{margin-top:10px;font-size:10.5px;line-height:1.75;color:var(--mut)}
+  .bullets b{color:var(--txt)}
+  .bullets .modline{color:var(--surge)}
+
+  /* stash grid */
+  .stashgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+  .cell{aspect-ratio:1;border:1px solid var(--line);background:#0a0c1099;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:2px;font-size:8px;color:var(--mut);letter-spacing:.06em}
+  .cell .ci{font-size:13px}
+  .cell.full{border-color:#46e2b244;color:var(--txt)}
+  .cell.full .ci{color:var(--acc)}
+  .cell.modded{border-color:#c77dff55}
+  .cell.modded .ci{color:var(--surge)}
+  .cell.sel{border-color:var(--acc);box-shadow:0 0 10px #46e2b233}
+  .stashmeta{display:flex;justify-content:space-between;font-size:9px;letter-spacing:.16em;color:var(--mut)}
+  .stashmeta b{color:var(--txt)}
+
+  /* seed + deploy */
+  .seedrow{display:flex;gap:8px}
+  .seedbox{flex:1;border:1px solid var(--line);background:#0a0c10;padding:10px 12px;font-size:12px;
+    letter-spacing:.2em;color:var(--txt)}
+  .dice{border:1px solid var(--line);background:#141a23;padding:10px 14px;font-size:12px;color:var(--mut)}
+  .deploy{border:0;background:var(--acc);color:var(--ink);font-size:13px;font-weight:700;
+    letter-spacing:.3em;padding:15px;cursor:default;text-align:center;
+    box-shadow:0 0 24px #46e2b244}
+  .deploy small{display:block;font-size:8.5px;font-weight:400;letter-spacing:.2em;margin-top:4px;opacity:.75}
+  .warnline{font-size:9.5px;color:var(--warn);letter-spacing:.06em;line-height:1.6;
+    border:1px solid #ffb45433;background:#ffb4540a;padding:8px 10px}
+
+  footer{display:flex;gap:18px;border-top:1px solid var(--line);padding-top:10px;
+    font-size:9px;letter-spacing:.18em;color:#8a97a877}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="logo">VOIDHARROW <b>EXTRACTION</b></div>
+    <div class="crumb">RECOVERY VESSEL <b>/ DEPLOYMENT TERMINAL</b></div>
+    <div class="hright mono">
+      <span class="statusdot"></span><span>VESSEL LINK STABLE</span>
+      <span>STASH SHARED: BULWARK / GHOST</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- OPERATORS -->
+    <div class="col">
+      <div class="panel" style="flex:1">
+        <div class="ptitle">OPERATOR <b>SELECT</b></div>
+        <div class="opcard sel">
+          <div class="opglyph mono">BW</div>
+          <div>
+            <div class="opname">BULWARK</div>
+            <div class="oprole">Shield-line assault · holds chokes</div>
+            <div class="optraits"><span class="trait">BASTION FRAME</span><span class="trait">HEAVY STABILITY</span></div>
+          </div>
+        </div>
+        <div class="opcard">
+          <div class="opglyph mono">GH</div>
+          <div>
+            <div class="opname">GHOST</div>
+            <div class="oprole">Quiet movement · reads the dark</div>
+            <div class="optraits"><span class="trait">SOFT STEP</span><span class="trait">SCANNER+</span></div>
+          </div>
+        </div>
+        <div style="font-size:9.5px;color:var(--mut);line-height:1.7;margin-top:auto">
+          At-risk Gear is shared across Operators. Death, abandonment, or quit fails the Run and loses it.
+        </div>
+      </div>
+    </div>
+
+    <!-- LOADOUT -->
+    <div class="col">
+      <div class="panel" style="flex:1">
+        <div class="ptitle">LOADOUT — <b>BULWARK</b></div>
+        <div class="silhouette">
+          <div class="fig">◈</div>
+          <div class="equip e-primary"><div><b>VK-7 PULSE CARBINE</b><br><span class="mod">◈ HOLLOW-POINT CHAMBER</span></div></div>
+          <div class="equip e-melee"><div style="text-align:right"><b>RIOT MAUL</b><br><span class="issued">ISSUED</span></div></div>
+          <div class="equip e-shield"><div><b>AEGIS WALL SHIELD</b><br><span class="mod">◈ REINFORCED LATTICE</span></div></div>
+        </div>
+        <div class="wdetail">
+          <div class="wn">VK-7 PULSE CARBINE</div>
+          <div class="wr">Suppressed burst carbine. <em>42 dmg · 24-rd mag · near-silent report.</em></div>
+          <div class="stats">
+            <span class="sl">DAMAGE</span><span class="sbar"><i style="width:72%"></i></span><span class="sv mono">42</span>
+            <span class="sl">HANDLING</span><span class="sbar"><i style="width:58%"></i></span><span class="sv mono">58</span>
+            <span class="sl">REPORT</span><span class="sbar"><i style="width:12%;background:var(--acc)"></i></span><span class="sv mono">SUPP</span>
+            <span class="sl">STABILITY DMG</span><span class="sbar"><i style="width:34%"></i></span><span class="sv mono">18</span>
+          </div>
+          <div class="bullets">
+            · <b>Effect:</b> 3-round burst, tight spread under suppression<br>
+            · <b>Resource:</b> 24/96 — partial resupply guaranteed before the Core<br>
+            · <b>Restriction:</b> no ammo drops from creatures<br>
+            <span class="modline">◈ Modifier: Hollow-Point Chamber — +15% Integrity damage, −10% Stability damage (immutable)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STASH + DEPLOY -->
+    <div class="col">
+      <div class="panel" style="flex:1">
+        <div class="ptitle">ARMAMENT STASH <b>— 24 SLOTS</b></div>
+        <div class="stashmeta"><span>SHARED · RECOVERY VESSEL</span><span><b>11</b> / 24</span></div>
+        <div class="stashgrid">
+          <div class="cell full sel"><span class="ci">▲</span>VK-7</div>
+          <div class="cell full modded"><span class="ci">▲</span>MR-2</div>
+          <div class="cell full"><span class="ci">▲</span>K9-S</div>
+          <div class="cell full modded"><span class="ci">◆</span>AXL</div>
+          <div class="cell full"><span class="ci">◆</span>HMR</div>
+          <div class="cell full"><span class="ci">■</span>AGS</div>
+          <div class="cell full modded"><span class="ci">■</span>BLW</div>
+          <div class="cell full"><span class="ci">▲</span>PDW</div>
+          <div class="cell full"><span class="ci">◆</span>SHK</div>
+          <div class="cell full"><span class="ci">▲</span>DMR</div>
+          <div class="cell full"><span class="ci">■</span>RTL</div>
+          <div class="cell"></div><div class="cell"></div><div class="cell"></div>
+          <div class="cell"></div><div class="cell"></div><div class="cell"></div>
+          <div class="cell"></div><div class="cell"></div><div class="cell"></div>
+          <div class="cell"></div><div class="cell"></div><div class="cell"></div>
+          <div class="cell"></div>
+        </div>
+        <div style="font-size:8.5px;color:var(--mut);letter-spacing:.1em">
+          ▲ RANGED · ◆ MELEE · ■ SHIELD — <span style="color:var(--surge)">violet = Modifier instance</span>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ptitle">DEPLOYMENT</div>
+        <div class="seedrow">
+          <div class="seedbox mono">SEED 9F2E-7G</div>
+          <div class="dice">⟳</div>
+        </div>
+        <div class="warnline">Egress bearing is truthful and known at insertion. It activates only after Core Secured. Greed raises the dark's attention — extra At-risk Gear costs you.</div>
+        <div class="deploy">DEPLOY<small>SIGNAL CORE RECOVERY · ONE LIFE</small></div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="mono">
+    <span>VOIDHARROW EXTRACTION — FPS VERTICAL SLICE</span>
+    <span>TERMINAL BUILD 0.4.1</span>
+    <span style="margin-left:auto">[ESC] VESSEL MENU</span>
+  </footer>
+</div>
+</body>
+</html>

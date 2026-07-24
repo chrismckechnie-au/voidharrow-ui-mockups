@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<!--
+  VOIDHARROW EXTRACTION — FPS HUD MOCKUP
+  Variant A: "Diegetic Frame"
+  Concept: Nothing reads as a menu. Vital state lives in a bottom-left suit cluster
+  built from segmented pips (Unity: UI Toolkit VisualElement custom-painted quads).
+  The visor edges carry a faint frame. Heat Tier is communicated ONLY through the
+  vignette pulse + creature-call caption — never a meter (per CONTEXT.md).
+  Palette: premium_ui_skin.gd — void-green accent, ink surfaces, hairline #232c39.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VHX FPS HUD — A: Diegetic Frame</title>
+<style>
+  :root{
+    --bg:#0a0c10; --panel:#10141b; --elev:#141a23; --line:#232c39;
+    --acc:#46e2b2; --warn:#ffb454; --surge:#c77dff; --danger:#ff5d6c;
+    --ok:#8af49e; --txt:#e6ecf3; --mut:#8a97a8; --ink:#05261c;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1600px;height:900px;overflow:hidden;background:var(--bg);
+    font-family:"Segoe UI","Inter",system-ui,sans-serif;color:var(--txt)}
+  .mono{font-family:"Cascadia Mono","Consolas",monospace}
+
+  /* ---- fake 3D scene ---- */
+  .scene{position:absolute;inset:0;
+    background:
+      radial-gradient(1100px 620px at 30% 42%, #182028 0%, transparent 62%),
+      radial-gradient(800px 500px at 76% 60%, #141020 0%, transparent 60%),
+      linear-gradient(180deg,#07090c 0%,#0a0d12 55%,#0d1117 100%);}
+  .corridor{position:absolute;left:0;right:0;bottom:0;height:46%;
+    background:linear-gradient(180deg,transparent,#0e131a 40%,#121821);
+    clip-path:polygon(0 100%,34% 0,66% 0,100% 100%);}
+  .strip{position:absolute;height:2px;background:var(--line);opacity:.55}
+  .lampA{position:absolute;width:130px;height:6px;border-radius:3px;background:var(--warn);
+    box-shadow:0 0 22px 6px #ffb45455;opacity:.8}
+  .lampG{position:absolute;width:150px;height:6px;border-radius:3px;background:var(--acc);
+    box-shadow:0 0 26px 8px #46e2b244;opacity:.75}
+
+  /* ---- heat vignette: the ONLY heat read-out (world-communicated) ---- */
+  .heat{position:absolute;inset:0;pointer-events:none;
+    box-shadow:inset 0 0 180px 40px #c77dff14;
+    animation:pulse 3.2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:inset 0 0 180px 40px #c77dff10}
+    50%{box-shadow:inset 0 0 220px 64px #c77dff26}}
+
+  /* ---- visor frame ---- */
+  .visor{position:absolute;inset:0;pointer-events:none;
+    border:1px solid #232c3966;
+    box-shadow:inset 0 0 90px #00000088}
+  .corner{position:absolute;width:26px;height:26px;border:1.5px solid #46e2b255}
+  .c-tl{top:14px;left:14px;border-right:0;border-bottom:0}
+  .c-tr{top:14px;right:14px;border-left:0;border-bottom:0}
+  .c-bl{bottom:14px;left:14px;border-right:0;border-top:0}
+  .c-br{bottom:14px;right:14px;border-left:0;border-top:0}
+
+  /* ---- crosshair: dot + 4 ticks (weapon-lowered state shown) ---- */
+  .xh{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);opacity:.85}
+  .xh .dot{position:absolute;left:-2px;top:-2px;width:4px;height:4px;border-radius:50%;background:var(--txt)}
+  .xh i{position:absolute;background:#e6ecf3cc}
+  .xh .n{left:-.5px;top:-14px;width:1px;height:7px}
+  .xh .s{left:-.5px;top:7px;width:1px;height:7px}
+  .xh .w{left:-14px;top:-.5px;width:7px;height:1px}
+  .xh .e{left:7px;top:-.5px;width:7px;height:1px}
+
+  /* ---- bottom-left suit cluster ---- */
+  .suit{position:absolute;left:26px;bottom:26px;display:flex;flex-direction:column;gap:8px}
+  .opline{display:flex;align-items:center;gap:10px}
+  .opglyph{width:30px;height:30px;border:1px solid var(--line);background:#10141bd4;
+    display:flex;align-items:center;justify-content:center;font-size:11px;letter-spacing:.14em;
+    color:var(--acc);clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}
+  .opname{font-size:11px;letter-spacing:.22em;color:var(--mut)}
+  .barlabel{font-size:10px;letter-spacing:.2em;color:var(--mut);width:64px}
+  .pips{display:flex;gap:3px}
+  .pip{width:22px;height:8px;background:#1a2230;border:1px solid #232c39;
+    clip-path:polygon(12% 0,100% 0,88% 100%,0 100%)}
+  .pip.on{background:var(--acc);border-color:var(--acc);box-shadow:0 0 8px #46e2b266}
+  .pip.on.warn{background:var(--warn);border-color:var(--warn);box-shadow:0 0 8px #ffb45466}
+  .vitals{display:flex;flex-direction:column;gap:6px;background:#0a0c10b8;
+    border:1px solid #232c3988;padding:10px 12px;backdrop-filter:blur(2px)}
+  .vrow{display:flex;align-items:center;gap:10px}
+  .num{margin-left:auto;font-size:11px;color:var(--txt)}
+  /* stability segments (6.4 melee/guard) */
+  .seg{width:12px;height:8px;background:#1a2230;border:1px solid #232c39}
+  .seg.on{background:#8a97a8;border-color:#8a97a8}
+  .seg.on.guard{background:var(--txt);border-color:var(--txt)}
+
+  /* ---- bottom-right weapon block ---- */
+  .weap{position:absolute;right:26px;bottom:26px;text-align:right;
+    background:#0a0c10b8;border:1px solid #232c3988;padding:10px 14px;backdrop-filter:blur(2px)}
+  .wname{font-size:12px;letter-spacing:.18em;color:var(--txt)}
+  .wmod{font-size:10px;letter-spacing:.12em;color:var(--surge);margin-top:2px}
+  .ammo{display:flex;align-items:baseline;justify-content:flex-end;gap:8px;margin-top:6px}
+  .mag{font-size:34px;font-weight:600;line-height:1}
+  .reserve{font-size:13px;color:var(--mut)}
+  .mode{font-size:10px;letter-spacing:.2em;color:var(--acc);margin-top:4px}
+
+  /* ---- bearing scanner hint (hold-to-use device, top-right, no minimap) ---- */
+  .bearing{position:absolute;right:26px;top:26px;text-align:right;font-size:10px;
+    letter-spacing:.16em;color:var(--mut);background:#0a0c10a0;border:1px solid #232c3966;
+    padding:8px 10px}
+  .bearing b{color:var(--acc);font-weight:600}
+
+  /* ---- objective chip: top-left, quiet ---- */
+  .obj{position:absolute;left:26px;top:26px;max-width:330px;background:#0a0c10a0;
+    border-left:2px solid var(--acc);padding:8px 12px}
+  .obj .k{font-size:9px;letter-spacing:.24em;color:var(--mut)}
+  .obj .v{font-size:12px;margin-top:3px;color:var(--txt)}
+  .obj .sub{font-size:10px;color:var(--mut);margin-top:2px}
+
+  /* ---- world-caption: director pressure as event, not meter ---- */
+  .call{position:absolute;left:50%;top:64%;transform:translateX(-50%);
+    font-size:12px;letter-spacing:.28em;color:var(--surge);opacity:.9;text-transform:uppercase}
+  .call::before,.call::after{content:"—";color:#c77dff66;margin:0 10px}
+
+  /* ---- interact prompt (world-anchored feel, cyan grammar) ---- */
+  .interact{position:absolute;left:50%;top:58%;transform:translateX(-50%);
+    display:flex;align-items:center;gap:10px;background:#0a0c10cc;
+    border:1px solid #46e2b255;padding:7px 14px}
+  .key{border:1px solid var(--acc);color:var(--acc);font-size:11px;padding:2px 7px;
+    font-family:"Cascadia Mono",monospace}
+  .interact span{font-size:11px;letter-spacing:.14em}
+
+  .tag{position:absolute;left:26px;top:88px;font-size:9px;letter-spacing:.2em;color:#8a97a866}
+</style>
+</head>
+<body>
+<div class="scene">
+  <div class="corridor"></div>
+  <div class="strip" style="left:18%;top:58%;width:22%"></div>
+  <div class="strip" style="right:14%;top:64%;width:26%"></div>
+  <div class="lampA" style="left:22%;top:52%"></div>
+  <div class="lampG" style="right:20%;top:70%"></div>
+  <div class="lampG" style="right:34%;top:66%;width:60px;opacity:.5"></div>
+</div>
+<div class="heat"></div>
+<div class="visor">
+  <div class="corner c-tl"></div><div class="corner c-tr"></div>
+  <div class="corner c-bl"></div><div class="corner c-br"></div>
+</div>
+
+<div class="xh"><span class="dot"></span><i class="n"></i><i class="s"></i><i class="w"></i><i class="e"></i></div>
+
+<div class="obj">
+  <div class="k">CONTRACT — SIGNAL CORE RECOVERY</div>
+  <div class="v">Decouple the Signal Core</div>
+  <div class="sub">Chamber located · hold position during decouple</div>
+</div>
+<div class="tag mono">SECTOR 7G · BRAIDED SPINE · HASH 9F2E</div>
+
+<div class="bearing mono">[Q] BEARING SCANNER<br><b>EGRESS LOCKED</b> — ACTIVATES ON CORE SECURED</div>
+
+<div class="suit">
+  <div class="opline"><div class="opglyph mono">BW</div><div class="opname">BULWARK</div></div>
+  <div class="vitals">
+    <div class="vrow"><span class="barlabel">INTEGRITY</span>
+      <span class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on warn"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i></span>
+      <span class="num mono">62</span></div>
+    <div class="vrow"><span class="barlabel">STABILITY</span>
+      <span class="pips"><i class="seg on guard"></i><i class="seg on guard"></i><i class="seg on guard"></i><i class="seg on guard"></i><i class="seg"></i><i class="seg"></i></span>
+      <span class="num mono">4/6</span></div>
+  </div>
+</div>
+
+<div class="interact"><span class="key">E</span><span>DECOUPLE SIGNAL CORE</span></div>
+<div class="call">call answered — movement in the vents</div>
+
+<div class="weap">
+  <div class="wname">VK-7 PULSE CARBINE</div>
+  <div class="wmod">◈ MODIFIER: HOLLOW-POINT CHAMBER</div>
+  <div class="ammo"><span class="mag mono">24</span><span class="reserve mono">/ 96</span></div>
+  <div class="mode">BURST · SUPPRESSED</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voidharrow Extraction — UI Mockups</title>
+<style>
+  :root{
+    --bg:#0a0c10; --panel:#10141b; --elev:#141a23; --line:#232c39;
+    --acc:#46e2b2; --warn:#ffb454; --surge:#c77dff; --danger:#ff5d6c;
+    --txt:#e6ecf3; --mut:#8a97a8;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--txt);
+    font-family:"Segoe UI","Inter",system-ui,sans-serif;line-height:1.6}
+  .mono{font-family:"Cascadia Mono","Consolas",monospace}
+  .wrap{max-width:1100px;margin:0 auto;padding:32px 20px 80px}
+
+  header{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:8px}
+  .brand{font-size:20px;letter-spacing:.34em}
+  .brand b{color:var(--acc)}
+  .sub{font-size:11px;letter-spacing:.22em;color:var(--mut);margin-top:6px}
+  .intro{color:var(--mut);font-size:14px;max-width:760px;margin:16px 0 8px}
+  .intro b{color:var(--txt)}
+  .grammar{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 4px;font-size:10px;letter-spacing:.14em}
+  .g{display:flex;align-items:center;gap:7px;border:1px solid var(--line);
+    background:var(--panel);padding:5px 10px;color:var(--mut)}
+  .g i{width:9px;height:9px;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+
+  .variant{margin-top:44px;border:1px solid var(--line);background:var(--panel)}
+  .vhead{display:flex;align-items:baseline;gap:14px;padding:14px 18px;
+    border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .vname{font-size:15px;letter-spacing:.2em}
+  .vname .vtag{color:var(--acc);font-size:11px;letter-spacing:.26em;margin-right:10px}
+  .vone{font-size:12px;color:var(--mut);font-style:italic}
+  .vbody{padding:18px}
+  .vbody p{font-size:13.5px;color:var(--mut);max-width:860px}
+  .vbody p b{color:var(--txt)}
+  .shot{margin-top:14px;border:1px solid var(--line);display:block}
+  .shot img{display:block;width:100%;height:auto}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .chip{font-size:9.5px;letter-spacing:.14em;color:var(--mut);
+    border:1px solid var(--line);padding:3px 8px;background:#0a0c10}
+  .chip.acc{color:var(--acc);border-color:#46e2b233}
+  .chip.surge{color:var(--surge);border-color:#c77dff33}
+  .links{margin-top:12px;font-size:11px;letter-spacing:.08em}
+  .links a{color:var(--acc);text-decoration:none;border-bottom:1px solid #46e2b244}
+  .links a:hover{border-bottom-color:var(--acc)}
+  .links span{color:var(--mut);margin:0 8px}
+
+  footer{margin-top:56px;border-top:1px solid var(--line);padding-top:16px;
+    font-size:10px;letter-spacing:.18em;color:#8a97a877}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">VOIDHARROW <b>EXTRACTION</b></div>
+    <div class="sub mono">FPS REINVENTION · UI MOCKUP GALLERY · UNITY VERTICAL SLICE</div>
+  </header>
+
+  <p class="intro">
+    Concept mockups for the first-person redesign. All variants share the
+    <b>premium skin</b> carried over from the original project and the game's
+    <b>light grammar</b>. Per design contract: no minimap (Bearing Scanner instead),
+    and Director pressure is communicated through the world — violet vignette pulse
+    and call captions — never a HUD meter.
+  </p>
+  <div class="grammar">
+    <span class="g"><i style="background:#8af49e"></i>EGRESS — GREEN</span>
+    <span class="g"><i style="background:#46e2b2"></i>OBJECTIVE — CYAN</span>
+    <span class="g"><i style="background:#c77dff"></i>THREAT — VIOLET</span>
+    <span class="g"><i style="background:#ffb454"></i>PRACTICAL — AMBER</span>
+  </div>
+
+  <!-- A -->
+  <section class="variant">
+    <div class="vhead">
+      <div class="vname"><span class="vtag">A</span>DIEGETIC FRAME</div>
+      <div class="vone">Vitals as suit-cluster pips — closest heir to the original HUD.</div>
+    </div>
+    <div class="vbody">
+      <p>Integrity and Stability live as segmented pips in a bottom-left suit cluster; the weapon block
+      sits bottom-right; a quiet objective chip anchors top-left. Nothing reads as a menu — pure panel,
+      border and flex primitives that translate 1:1 to <b>UI Toolkit USS</b>.</p>
+      <div class="meta">
+        <span class="chip acc">UI TOOLKIT: FLEX + BORDERS</span>
+        <span class="chip">NO CUSTOM RENDERER</span>
+        <span class="chip surge">HEAT: WORLD-COMMUNICATED</span>
+      </div>
+      <a class="shot" href="fps-hud-a-diegetic.png"><img src="fps-hud-a-diegetic.png" alt="FPS HUD variant A — Diegetic Frame" loading="lazy"></a>
+      <div class="links mono">
+        <a href="fps-hud-a-diegetic.html">LIVE HTML</a><span>·</span>
+        <a href="fps-hud-a-diegetic.png">FULL PNG</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- B -->
+  <section class="variant">
+    <div class="vhead">
+      <div class="vname"><span class="vtag">B</span>PRECISION RAIL</div>
+      <div class="vone">One anchored command rail — fastest read mid-fight.</div>
+    </div>
+    <div class="vbody">
+      <p>A single rail spans the bottom edge: vitals, the 4-slot Field Backpack, a compass-tape bearing
+      strip (the Bearing Scanner's passive read) and weapon — all snapped to one horizontal datum.
+      The most tactical-terminal of the three; still pure USS flex rows and hairline borders.</p>
+      <div class="meta">
+        <span class="chip acc">UI TOOLKIT: FLEX + BORDERS</span>
+        <span class="chip">BEARING TAPE = SCANNER PASSIVE</span>
+        <span class="chip">GLANCE-OPTIMIZED</span>
+      </div>
+      <a class="shot" href="fps-hud-b-rail.png"><img src="fps-hud-b-rail.png" alt="FPS HUD variant B — Precision Rail" loading="lazy"></a>
+      <div class="links mono">
+        <a href="fps-hud-b-rail.html">LIVE HTML</a><span>·</span>
+        <a href="fps-hud-b-rail.png">FULL PNG</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- C -->
+  <section class="variant">
+    <div class="vhead">
+      <div class="vname"><span class="vtag">C</span>VISOR ARC</div>
+      <div class="vone">Helmet-projected arcs hugging the crosshair — maximum immersion.</div>
+    </div>
+    <div class="vbody">
+      <p>The suit, not the game, tells you things: Integrity and Stability are curved arcs around the
+      reticle, ammo is a mirrored arc, decouple progress is a ring. Everything else is corner
+      whisper-text. Arcs render as vector <b>Painter2D</b> paths — texture-free and crisp at any DPI.</p>
+      <div class="meta">
+        <span class="chip surge">PAINTER2D VECTOR ARCS</span>
+        <span class="chip">MINIMAL SCREEN FURNITURE</span>
+        <span class="chip acc">DPI-CLEAN</span>
+      </div>
+      <a class="shot" href="fps-hud-c-visor.png"><img src="fps-hud-c-visor.png" alt="FPS HUD variant C — Visor Arc" loading="lazy"></a>
+      <div class="links mono">
+        <a href="fps-hud-c-visor.html">LIVE HTML</a><span>·</span>
+        <a href="fps-hud-c-visor.png">FULL PNG</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Terminal -->
+  <section class="variant">
+    <div class="vhead">
+      <div class="vname"><span class="vtag">◇</span>DEPLOYMENT TERMINAL</div>
+      <div class="vone">The out-of-run workspace aboard the Recovery Vessel.</div>
+    </div>
+    <div class="vbody">
+      <p>Operator select (Bulwark / Ghost), loadout with exact weapon numbers and the Modifier line,
+      the shared 24-slot Armament Stash, seed entry and deploy. The warning strip teaches Greed-Danger
+      and truthful-egress in-fiction.</p>
+      <div class="meta">
+        <span class="chip acc">UI TOOLKIT SCREEN</span>
+        <span class="chip">STASH 11/24 SHOWN</span>
+        <span class="chip surge">MODIFIERS IN VIOLET</span>
+      </div>
+      <a class="shot" href="deployment-terminal.png"><img src="deployment-terminal.png" alt="Deployment Terminal" loading="lazy"></a>
+      <div class="links mono">
+        <a href="deployment-terminal.html">LIVE HTML</a><span>·</span>
+        <a href="deployment-terminal.png">FULL PNG</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="mono">
+    VOIDHARROW EXTRACTION — FPS VERTICAL SLICE · UI MOCKUPS · GENERATED FOR DESIGN REVIEW
+  </footer>
+</div>
+</body>
+</html>

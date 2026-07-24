@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<!--
+  VOIDHARROW EXTRACTION — FPS HUD MOCKUP
+  Variant C: "Visor Arc"
+  Concept: helmet-projected UI. Integrity + stability are curved arcs that hug
+  the crosshair (UI Toolkit: Painter2D arc paths — vector-clean, no textures).
+  Everything else is corner whisper-text. Maximum immersion; the fiction is that
+  the suit, not the game, is telling you things. Heat Tier remains diegetic.
+  Palette: premium_ui_skin.gd.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VHX FPS HUD — C: Visor Arc</title>
+<style>
+  :root{
+    --bg:#0a0c10; --panel:#10141b; --elev:#141a23; --line:#232c39;
+    --acc:#46e2b2; --warn:#ffb454; --surge:#c77dff; --danger:#ff5d6c;
+    --ok:#8af49e; --txt:#e6ecf3; --mut:#8a97a8; --ink:#05261c;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1600px;height:900px;overflow:hidden;background:var(--bg);
+    font-family:"Segoe UI","Inter",system-ui,sans-serif;color:var(--txt)}
+  .mono{font-family:"Cascadia Mono","Consolas",monospace}
+
+  .scene{position:absolute;inset:0;
+    background:
+      radial-gradient(1200px 700px at 50% 46%, #171f29 0%, transparent 58%),
+      radial-gradient(600px 420px at 82% 24%, #131022 0%, transparent 55%),
+      linear-gradient(180deg,#05070a 0%,#090c11 50%,#0c1016 100%);}
+  .ring{position:absolute;border:1px solid #232c39;border-radius:50%;opacity:.35}
+  .lampA{position:absolute;width:120px;height:5px;border-radius:3px;background:var(--warn);
+    box-shadow:0 0 20px 5px #ffb45450;opacity:.75}
+  .lampV{position:absolute;width:80px;height:5px;border-radius:3px;background:var(--surge);
+    box-shadow:0 0 26px 8px #c77dff4d;opacity:.7}
+
+  .heat{position:absolute;inset:0;pointer-events:none;animation:pulse 2.2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:inset 0 0 200px 50px #c77dff14}
+    50%{box-shadow:inset 0 0 260px 90px #c77dff33}}
+
+  /* ---- visor curvature shading ---- */
+  .visor{position:absolute;inset:0;pointer-events:none;border-radius:4%/8%;
+    box-shadow:inset 0 0 140px 40px #000000aa, inset 0 0 30px #00000066}
+
+  /* ---- center reticle + arcs ---- */
+  .ret{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:220px;height:220px}
+  .ret svg{position:absolute;inset:0;overflow:visible}
+  .xh .dot{position:absolute;left:calc(50% - 1.5px);top:calc(50% - 1.5px);width:3px;height:3px;
+    background:var(--txt);border-radius:50%}
+  .xh i{position:absolute;background:#e6ecf3cc}
+  .xh .n{left:calc(50% - .5px);top:calc(50% - 15px);width:1px;height:7px}
+  .xh .s{left:calc(50% - .5px);top:calc(50% + 8px);width:1px;height:7px}
+  .xh .w{left:calc(50% - 15px);top:calc(50% - .5px);width:7px;height:1px}
+  .xh .e{left:calc(50% + 8px);top:calc(50% - .5px);width:7px;height:1px}
+
+  /* arc-adjacent whisper labels */
+  .hplabel{position:absolute;left:calc(50% - 150px);top:calc(50% + 66px);font-size:9px;
+    letter-spacing:.22em;color:var(--mut)}
+  .hplabel b{color:var(--txt)}
+  .amlabel{position:absolute;left:calc(50% + 96px);top:calc(50% + 66px);font-size:9px;
+    letter-spacing:.22em;color:var(--mut);text-align:left}
+  .amlabel b{color:var(--txt);font-size:13px;letter-spacing:.06em}
+
+  /* ---- corner whispers ---- */
+  .nw{position:absolute;font-size:10px;letter-spacing:.18em;color:var(--mut);line-height:1.8}
+  .nw b{color:var(--acc);font-weight:600}
+  .tl{left:30px;top:28px}
+  .tr{right:30px;top:28px;text-align:right}
+  .bl{left:30px;bottom:28px}
+  .br{right:30px;bottom:28px;text-align:right}
+  .whisper-box{display:inline-block;text-align:left}
+
+  /* decouple progress: circular ring around crosshair replaces a bar */
+  .objline{position:absolute;left:50%;top:calc(50% + 128px);transform:translateX(-50%);
+    font-size:10px;letter-spacing:.3em;color:var(--acc);text-transform:uppercase}
+  .objline .dim{color:var(--mut)}
+
+  .call{position:absolute;left:50%;top:30%;transform:translateX(-50%);
+    font-size:12px;letter-spacing:.34em;color:var(--surge);text-transform:uppercase;opacity:.92}
+  .call::before,.call::after{content:"·";color:#c77dff88;margin:0 14px}
+
+  .interact{position:absolute;left:50%;top:calc(50% - 150px);transform:translateX(-50%);
+    display:flex;align-items:center;gap:10px}
+  .key{border:1px solid var(--acc);color:var(--acc);font-size:11px;padding:2px 7px;
+    font-family:"Cascadia Mono",monospace;background:#0a0c1080}
+  .interact span{font-size:10px;letter-spacing:.2em;color:var(--txt)}
+</style>
+</head>
+<body>
+<div class="scene">
+  <div class="ring" style="left:8%;top:12%;width:340px;height:340px"></div>
+  <div class="ring" style="right:6%;bottom:8%;width:520px;height:520px"></div>
+  <div class="lampA" style="left:16%;top:38%"></div>
+  <div class="lampV" style="right:14%;top:60%"></div>
+</div>
+<div class="heat"></div>
+<div class="visor"></div>
+
+<!-- whisper text corners -->
+<div class="nw tl"><b>SIGNAL CORE RECOVERY</b><br>DECOUPLING — HOLD CHAMBER</div>
+<div class="nw tr mono">GHOST · SEED 9F2E-7G<br><b>[Q]</b> BEARING SCANNER</div>
+<div class="nw bl"><span class="whisper-box">FIELD BACKPACK<br><b>3 / 4</b> · 1 INCOMPATIBLE</span></div>
+<div class="nw br"><span class="whisper-box">VK-7 PULSE CARBINE<br><span style="color:var(--surge)">◈ HOLLOW-POINT CHAMBER</span> · BURST</span></div>
+
+<!-- reticle with arcs -->
+<div class="ret xh">
+  <svg viewBox="0 0 220 220">
+    <!-- integrity arc: left, 62% of 240deg sweep -->
+    <path d="M 30 150 A 92 92 0 1 1 78 21" fill="none" stroke="#1a2230" stroke-width="5"/>
+    <path d="M 30 150 A 92 92 0 1 1 66 33" fill="none" stroke="#46e2b2" stroke-width="5"
+      stroke-linecap="round" style="filter:drop-shadow(0 0 5px #46e2b288)"/>
+    <!-- stability pips along inner left arc -->
+    <circle cx="44" cy="132" r="2.4" fill="#e6ecf3"/><circle cx="40" cy="112" r="2.4" fill="#e6ecf3"/>
+    <circle cx="42" cy="92" r="2.4" fill="#e6ecf3"/><circle cx="50" cy="73" r="2.4" fill="#e6ecf3"/>
+    <circle cx="63" cy="57" r="2.4" fill="#3a4656"/><circle cx="80" cy="45" r="2.4" fill="#3a4656"/>
+    <!-- ammo arc: right, 25% of sweep (24/96 reserve feel: mag fraction shown) -->
+    <path d="M 190 150 A 92 92 0 1 0 142 21" fill="none" stroke="#1a2230" stroke-width="5"/>
+    <path d="M 190 150 A 92 92 0 0 1 190 70" fill="none" stroke="#e6ecf3" stroke-width="5"
+      stroke-linecap="round" style="filter:drop-shadow(0 0 5px #e6ecf355)"/>
+    <!-- decouple progress ring: 41/75 = 55% -->
+    <circle cx="110" cy="110" r="104" fill="none" stroke="#1a2230" stroke-width="1.5" stroke-dasharray="3 5"/>
+    <circle cx="110" cy="110" r="104" fill="none" stroke="#46e2b2" stroke-width="1.5"
+      stroke-dasharray="359 294" transform="rotate(-90 110 110)" opacity=".9"/>
+  </svg>
+  <span class="dot"></span><i class="n"></i><i class="s"></i><i class="w"></i><i class="e"></i>
+</div>
+<div class="hplabel">INTEGRITY <b>62</b></div>
+<div class="amlabel"><b>24</b> / 96</div>
+
+<div class="interact"><span class="key">E</span><span>DECOUPLING</span></div>
+<div class="call">a call goes unanswered</div>
+<div class="objline">CORE DECOUPLE <span class="dim">41 / 75 SEC</span></div>
+</body>
+</html>

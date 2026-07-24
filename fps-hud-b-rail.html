@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<!--
+  VOIDHARROW EXTRACTION — FPS HUD MOCKUP
+  Variant B: "Precision Rail"
+  Concept: a single anchored command rail spans the bottom edge: vitals left,
+  weapon center-right, bearing strip center. Everything snaps to one horizontal
+  datum — reads instantly at a glance mid-fight. Crosshair grows contextually.
+  Heat Tier stays diegetic (edge chroma + call caption), per CONTEXT.md.
+  Palette: premium_ui_skin.gd. All primitives are panel/border/flex — maps 1:1
+  to UI Toolkit USS flex rows + border-width hairlines.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VHX FPS HUD — B: Precision Rail</title>
+<style>
+  :root{
+    --bg:#0a0c10; --panel:#10141b; --elev:#141a23; --line:#232c39;
+    --acc:#46e2b2; --warn:#ffb454; --surge:#c77dff; --danger:#ff5d6c;
+    --ok:#8af49e; --txt:#e6ecf3; --mut:#8a97a8; --ink:#05261c;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1600px;height:900px;overflow:hidden;background:var(--bg);
+    font-family:"Segoe UI","Inter",system-ui,sans-serif;color:var(--txt)}
+  .mono{font-family:"Cascadia Mono","Consolas",monospace}
+
+  .scene{position:absolute;inset:0;
+    background:
+      radial-gradient(1000px 560px at 62% 38%, #161d26 0%, transparent 60%),
+      radial-gradient(700px 480px at 24% 66%, #120f1d 0%, transparent 58%),
+      linear-gradient(180deg,#06080b 0%,#0a0d12 50%,#0d1117 100%);}
+  .gantry{position:absolute;left:0;right:0;top:44%;height:3px;background:#232c39;opacity:.5}
+  .col{position:absolute;top:0;bottom:0;width:2px;background:#1c2430;opacity:.6}
+  .lampA{position:absolute;width:110px;height:5px;border-radius:3px;background:var(--warn);
+    box-shadow:0 0 20px 5px #ffb45450;opacity:.8}
+  .lampV{position:absolute;width:90px;height:5px;border-radius:3px;background:var(--surge);
+    box-shadow:0 0 24px 7px #c77dff40;opacity:.7}
+
+  .heat{position:absolute;inset:0;pointer-events:none;animation:pulse 2.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:inset 0 0 160px 30px #c77dff0e}
+    50%{box-shadow:inset 0 0 230px 70px #c77dff2a}}
+
+  /* ---- crosshair with hit-confirm ticks ---- */
+  .xh{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%)}
+  .xh .dot{position:absolute;left:-1.5px;top:-1.5px;width:3px;height:3px;background:var(--txt);border-radius:50%}
+  .xh i{position:absolute;background:#e6ecf3d9}
+  .xh .n{left:-.5px;top:-16px;width:1px;height:8px}
+  .xh .s{left:-.5px;top:8px;width:1px;height:8px}
+  .xh .w{left:-16px;top:-.5px;width:8px;height:1px}
+  .xh .e{left:8px;top:-.5px;width:8px;height:1px}
+  .xh .hit{position:absolute;left:-9px;top:-9px;width:18px;height:18px;border:1px solid var(--danger);
+    transform:rotate(45deg);opacity:.85;animation:hitfade 1s forwards}
+  @keyframes hitfade{0%{opacity:1;transform:rotate(45deg) scale(.7)}100%{opacity:0;transform:rotate(45deg) scale(1.25)}}
+
+  /* ---- top bar: contract strip across the very top ---- */
+  .topbar{position:absolute;top:0;left:0;right:0;height:34px;display:flex;align-items:center;
+    gap:18px;padding:0 20px;background:linear-gradient(180deg,#0a0c10f0,#0a0c1000);border-bottom:1px solid #232c3944}
+  .topbar .brand{font-size:10px;letter-spacing:.3em;color:var(--mut)}
+  .topbar .brand b{color:var(--acc);font-weight:600}
+  .contract{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.12em}
+  .cdot{width:7px;height:7px;background:var(--acc);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+  .topright{margin-left:auto;display:flex;gap:16px;font-size:10px;letter-spacing:.14em;color:var(--mut)}
+  .topright .seed{color:#8a97a899}
+
+  /* ---- bottom command rail: THE variant-defining element ---- */
+  .rail{position:absolute;left:0;right:0;bottom:0;height:86px;display:flex;align-items:stretch;
+    background:linear-gradient(0deg,#0a0c10f2 30%,#0a0c10c8 80%,transparent);
+    border-top:1px solid var(--line)}
+  .cell{display:flex;flex-direction:column;justify-content:center;padding:10px 18px;
+    border-right:1px solid #232c3955;min-width:150px}
+  .cell:last-child{border-right:0}
+  .clabel{font-size:9px;letter-spacing:.26em;color:var(--mut);margin-bottom:5px}
+  /* vitals: continuous bars with segment notches */
+  .bar{position:relative;width:200px;height:9px;background:#131a24;border:1px solid var(--line)}
+  .bar .fill{position:absolute;inset:1px auto 1px 1px;background:var(--acc);box-shadow:0 0 10px #46e2b255}
+  .bar.hp .fill{width:62%;background:linear-gradient(90deg,var(--acc),#2fbf95)}
+  .bar .notch{position:absolute;top:-1px;bottom:-1px;width:1px;background:#0a0c10}
+  .stab{display:flex;gap:3px;margin-top:6px}
+  .stab i{width:30px;height:5px;background:#1a2230;border:1px solid var(--line)}
+  .stab i.on{background:var(--txt);border-color:var(--txt)}
+  .vnum{font-size:10px;color:var(--mut);margin-top:4px}
+  /* bearing strip — compass tape, the scanner's passive read */
+  .bearing-cell{flex:1;align-items:center;text-align:center;border-left:1px solid #232c3955}
+  .tape{position:relative;width:min(460px,90%);height:22px;overflow:hidden;
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .tape .tick{position:absolute;top:0;width:1px;height:7px;background:#3a4656}
+  .tape .tick.big{height:12px;background:#566274}
+  .tape .tlabel{position:absolute;top:10px;font-size:8px;color:var(--mut);transform:translateX(-50%);letter-spacing:.1em}
+  .tape .marker{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--txt)}
+  .tape .egress{position:absolute;top:2px;transform:translateX(-50%);width:8px;height:8px;
+    background:var(--ok);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);opacity:.35}
+  .tape .core{position:absolute;top:2px;transform:translateX(-50%);width:8px;height:8px;
+    background:var(--acc);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+  .bearing-sub{font-size:9px;letter-spacing:.18em;color:var(--mut);margin-top:5px}
+  .bearing-sub b{color:var(--acc)}
+  /* weapon block on rail */
+  .wname{font-size:13px;letter-spacing:.14em}
+  .wmod{font-size:9px;letter-spacing:.1em;color:var(--surge);margin-top:2px}
+  .ammo{display:flex;align-items:baseline;gap:8px;margin-top:4px}
+  .mag{font-size:30px;font-weight:600;line-height:1}
+  .res{font-size:12px;color:var(--mut)}
+  /* backpack quick-slots (4-slot Field Backpack) */
+  .slots{display:flex;gap:6px;margin-top:4px}
+  .slot{width:34px;height:26px;border:1px solid var(--line);background:#10141b99;
+    display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--mut);letter-spacing:.08em}
+  .slot.full{border-color:#46e2b255;color:var(--acc)}
+  .slot.incompat{border-color:#ffb45455;color:var(--warn)}
+
+  .call{position:absolute;left:50%;top:62%;transform:translateX(-50%);
+    font-size:12px;letter-spacing:.3em;color:var(--surge);text-transform:uppercase;opacity:.9}
+  .call::before,.call::after{content:"—";color:#c77dff66;margin:0 10px}
+
+  .interact{position:absolute;left:50%;top:56%;transform:translateX(-50%);
+    display:flex;align-items:center;gap:10px;background:#0a0c10cc;
+    border:1px solid #46e2b255;padding:7px 14px}
+  .key{border:1px solid var(--acc);color:var(--acc);font-size:11px;padding:2px 7px;
+    font-family:"Cascadia Mono",monospace}
+  .interact span{font-size:11px;letter-spacing:.14em}
+</style>
+</head>
+<body>
+<div class="scene">
+  <div class="gantry"></div>
+  <div class="col" style="left:30%"></div><div class="col" style="left:64%"></div>
+  <div class="lampA" style="left:34%;top:44%"></div>
+  <div class="lampV" style="right:18%;top:30%"></div>
+</div>
+<div class="heat"></div>
+
+<div class="topbar">
+  <div class="brand">VOIDHARROW <b>EXTRACTION</b></div>
+  <div class="contract"><span class="cdot"></span> SIGNAL CORE RECOVERY — DECOUPLE IN PROGRESS 41/75s</div>
+  <div class="topright mono"><span class="seed">SEED 9F2E-7G</span><span>OPERATOR: GHOST</span></div>
+</div>
+
+<div class="xh"><span class="dot"></span><i class="n"></i><i class="s"></i><i class="w"></i><i class="e"></i><span class="hit"></span></div>
+
+<div class="interact"><span class="key">E</span><span>HOLD — DECOUPLING CORE</span></div>
+<div class="call">the dark is listening</div>
+
+<div class="rail">
+  <div class="cell">
+    <div class="clabel">INTEGRITY</div>
+    <div class="bar hp"><span class="fill"></span>
+      <span class="notch" style="left:25%"></span><span class="notch" style="left:50%"></span><span class="notch" style="left:75%"></span></div>
+    <div class="stab"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div>
+    <div class="vnum mono">62 / 100 · STABILITY 4/6</div>
+  </div>
+  <div class="cell">
+    <div class="clabel">FIELD BACKPACK</div>
+    <div class="slots">
+      <div class="slot full">MR-2</div><div class="slot full">K9</div>
+      <div class="slot incompat">HVY</div><div class="slot">—</div>
+    </div>
+    <div class="vnum">4 SLOTS · AT-RISK GEAR</div>
+  </div>
+  <div class="cell bearing-cell">
+    <div class="tape">
+      <!-- ticks every 10deg -->
+      <span class="tick" style="left:5%"></span><span class="tick big" style="left:12%"></span>
+      <span class="tick" style="left:20%"></span><span class="tick big" style="left:28%"></span>
+      <span class="tick" style="left:36%"></span><span class="tick big" style="left:44%"></span>
+      <span class="tick" style="left:52%"></span><span class="tick big" style="left:60%"></span>
+      <span class="tick" style="left:68%"></span><span class="tick big" style="left:76%"></span>
+      <span class="tick" style="left:84%"></span><span class="tick big" style="left:92%"></span>
+      <span class="tlabel" style="left:12%">030</span><span class="tlabel" style="left:44%">120</span>
+      <span class="tlabel" style="left:76%">210</span>
+      <span class="core" style="left:44%"></span>
+      <span class="egress" style="left:80%"></span>
+      <span class="marker"></span>
+    </div>
+    <div class="bearing-sub mono">CORE <b>120° · 38m</b> · SIGNAL STRONG — EGRESS 208° (INACTIVE)</div>
+  </div>
+  <div class="cell" style="min-width:210px">
+    <div class="wname">VK-7 PULSE CARBINE</div>
+    <div class="wmod">◈ HOLLOW-POINT CHAMBER</div>
+    <div class="ammo"><span class="mag mono">24</span><span class="res mono">/ 96 · BURST</span></div>
+  </div>
+</div>
+</body>
+</html>
