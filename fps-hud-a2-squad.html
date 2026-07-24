@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<!--
+  VOIDHARROW EXTRACTION — FPS HUD MOCKUP
+  Variant A2: "Squad Ops" (revision of chosen Variant A — Diegetic Frame)
+
+  Revision brief:
+   - Party frame (members + HP) on the LEFT, above own vitals
+   - Circular motion tracker (Aliens-style) on the RIGHT, above weapon details
+   - Notifications TOP-CENTRE
+   - Action bar BOTTOM-CENTRE: 1/2 = primary/secondary weapons,
+     3-5 = consumables, Q/R = active abilities
+
+  Design contract honoured (CONTEXT.md + locked decisions):
+   - Heat Tier stays diegetic (violet vignette pulse + call caption, no meter)
+   - Motion tracker = Aliens-style: sweep, fuzzy jittering blips in rough range
+     bands/direction, NO exact positions, stationary contacts fade out, tense
+     proximity beep ticks. No minimap (this is a handheld device, not a map).
+   - Light grammar: green egress / cyan objective / violet threat / amber practical.
+   - Palette: premium_ui_skin.gd exact constants.
+   - Party frame shows solo-self state so it is truthful for the solo vertical
+     slice while proving the squad layout.
+
+  Unity translation: panels/borders/flex -> UI Toolkit USS. Tracker sweep + blips
+  -> Painter2D (vector) on a VisualElement; blip jitter driven by the sensor model.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VHX FPS HUD — A2: Squad Ops</title>
+<style>
+  :root{
+    --bg:#0a0c10; --panel:#10141b; --elev:#141a23; --line:#232c39;
+    --acc:#46e2b2; --warn:#ffb454; --surge:#c77dff; --danger:#ff5d6c;
+    --ok:#8af49e; --txt:#e6ecf3; --mut:#8a97a8; --ink:#05261c;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1600px;height:900px;overflow:hidden;background:var(--bg);
+    font-family:"Segoe UI","Inter",system-ui,sans-serif;color:var(--txt)}
+  .mono{font-family:"Cascadia Mono","Consolas",monospace}
+
+  /* ---- fake 3D scene ---- */
+  .scene{position:absolute;inset:0;
+    background:
+      radial-gradient(1100px 620px at 30% 42%, #182028 0%, transparent 62%),
+      radial-gradient(800px 500px at 76% 60%, #141020 0%, transparent 60%),
+      linear-gradient(180deg,#07090c 0%,#0a0d12 55%,#0d1117 100%);}
+  .corridor{position:absolute;left:0;right:0;bottom:0;height:46%;
+    background:linear-gradient(180deg,transparent,#0e131a 40%,#121821);
+    clip-path:polygon(0 100%,34% 0,66% 0,100% 100%);}
+  .strip{position:absolute;height:2px;background:var(--line);opacity:.55}
+  .lampA{position:absolute;width:130px;height:6px;border-radius:3px;background:var(--warn);
+    box-shadow:0 0 22px 6px #ffb45455;opacity:.8}
+  .lampG{position:absolute;width:150px;height:6px;border-radius:3px;background:var(--acc);
+    box-shadow:0 0 26px 8px #46e2b244;opacity:.75}
+
+  /* ---- heat vignette: world-communicated only ---- */
+  .heat{position:absolute;inset:0;pointer-events:none;
+    animation:pulse 3.0s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:inset 0 0 180px 40px #c77dff12}
+    50%{box-shadow:inset 0 0 230px 70px #c77dff2c}}
+
+  /* ---- visor frame ---- */
+  .visor{position:absolute;inset:0;pointer-events:none;border:1px solid #232c3966;
+    box-shadow:inset 0 0 90px #00000088}
+  .corner{position:absolute;width:26px;height:26px;border:1.5px solid #46e2b255}
+  .c-tl{top:14px;left:14px;border-right:0;border-bottom:0}
+  .c-tr{top:14px;right:14px;border-left:0;border-bottom:0}
+  .c-bl{bottom:14px;left:14px;border-right:0;border-top:0}
+  .c-br{bottom:14px;right:14px;border-left:0;border-top:0}
+
+  /* ---- crosshair ---- */
+  .xh{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);opacity:.85}
+  .xh .dot{position:absolute;left:-2px;top:-2px;width:4px;height:4px;border-radius:50%;background:var(--txt)}
+  .xh i{position:absolute;background:#e6ecf3cc}
+  .xh .n{left:-.5px;top:-14px;width:1px;height:7px}
+  .xh .s{left:-.5px;top:7px;width:1px;height:7px}
+  .xh .w{left:-14px;top:-.5px;width:7px;height:1px}
+  .xh .e{left:7px;top:-.5px;width:7px;height:1px}
+
+  /* ================= NOTIFICATIONS — top centre ================= */
+  .notify{position:absolute;left:50%;top:32px;transform:translateX(-50%);
+    display:flex;flex-direction:column;align-items:center;gap:8px;width:520px}
+  .toast{display:flex;align-items:center;gap:10px;background:#0a0c10d8;
+    border:1px solid var(--line);border-left:2px solid var(--acc);
+    padding:8px 16px;font-size:11px;letter-spacing:.12em;
+    box-shadow:0 4px 18px #000000aa;animation:drop .35s ease-out}
+  .toast .ic{font-size:12px}
+  .toast.obj{border-left-color:var(--acc)} .toast.obj .ic{color:var(--acc)}
+  .toast.threat{border-left-color:var(--surge)} .toast.threat .ic{color:var(--surge)}
+  .toast.warn{border-left-color:var(--warn)} .toast.warn .ic{color:var(--warn)}
+  .toast.fading{opacity:.45}
+  @keyframes drop{from{transform:translateY(-12px);opacity:0}to{transform:none;opacity:1}}
+
+  /* ================= LEFT COLUMN: party frame + own vitals ================= */
+  .leftcol{position:absolute;left:26px;top:120px;display:flex;flex-direction:column;gap:10px;width:250px}
+  .panel{background:#0a0c10b8;border:1px solid #232c3988;backdrop-filter:blur(2px)}
+  .plabel{font-size:9px;letter-spacing:.26em;color:var(--mut);padding:8px 12px 0}
+  /* party member row */
+  .pm{display:flex;align-items:center;gap:9px;padding:7px 12px;border-top:1px solid #232c3944}
+  .pm:first-of-type{border-top:0}
+  .pglyph{width:24px;height:24px;flex:none;display:flex;align-items:center;justify-content:center;
+    font-size:9px;letter-spacing:.08em;color:var(--acc);border:1px solid #46e2b244;
+    clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);background:#0a0c10}
+  .pm.self .pglyph{color:var(--ink);background:var(--acc);border-color:var(--acc)}
+  .pminfo{flex:1;min-width:0}
+  .pmname{font-size:10.5px;letter-spacing:.14em;display:flex;justify-content:space-between}
+  .pmname .hp{color:var(--mut);font-size:9.5px}
+  .pmhp{height:4px;background:#1a2230;margin-top:4px;position:relative}
+  .pmhp i{position:absolute;inset:0 auto 0 0;background:var(--acc)}
+  .pm.low .pmhp i{background:var(--warn)}
+  .pm.crit .pmhp i{background:var(--danger)}
+  .pmstat{font-size:8px;letter-spacing:.14em;color:var(--mut);margin-top:3px}
+  .pm.down .pglyph{color:var(--danger);border-color:var(--danger)}
+  .pm.down .pmname{color:var(--danger)}
+
+  /* own vitals (detailed) */
+  .vitals{padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+  .vrow{display:flex;align-items:center;gap:10px}
+  .barlabel{font-size:9.5px;letter-spacing:.2em;color:var(--mut);width:62px}
+  .pips{display:flex;gap:3px}
+  .pip{width:20px;height:8px;background:#1a2230;border:1px solid #232c39;
+    clip-path:polygon(12% 0,100% 0,88% 100%,0 100%)}
+  .pip.on{background:var(--acc);border-color:var(--acc);box-shadow:0 0 8px #46e2b266}
+  .pip.on.warn{background:var(--warn);border-color:var(--warn);box-shadow:0 0 8px #ffb45466}
+  .seg{width:11px;height:8px;background:#1a2230;border:1px solid #232c39}
+  .seg.on{background:var(--txt);border-color:var(--txt)}
+  .num{margin-left:auto;font-size:11px;color:var(--txt)}
+
+  /* ================= RIGHT COLUMN: motion tracker + weapon ================= */
+  .rightcol{position:absolute;right:26px;bottom:26px;display:flex;flex-direction:column;
+    gap:10px;align-items:flex-end}
+  /* motion tracker */
+  .tracker{background:#0a0c10c4;border:1px solid #232c3988;padding:10px 12px;width:200px}
+  .thead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+  .tname{font-size:8.5px;letter-spacing:.22em;color:var(--mut)}
+  .tbeep{font-size:8px;letter-spacing:.16em;color:var(--warn);animation:beepblink 1.1s steps(2) infinite}
+  @keyframes beepblink{50%{opacity:.25}}
+  .scope{position:relative;width:176px;height:176px;margin:0 auto}
+  .scope svg{position:absolute;inset:0}
+  .sweep{position:absolute;inset:0;border-radius:50%;overflow:hidden;
+    background:conic-gradient(from 0deg, #46e2b233 0deg, transparent 60deg);
+    animation:sweep 3.4s linear infinite;
+    -webkit-mask:radial-gradient(circle, transparent 24px, #000 25px);
+            mask:radial-gradient(circle, transparent 24px, #000 25px)}
+  @keyframes sweep{to{transform:rotate(360deg)}}
+  .blip{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--surge);
+    box-shadow:0 0 9px 2px #c77dff88;animation:jitter .5s infinite alternate, flick 1.3s infinite}
+  .blip.b2{animation-duration:.42s,1.7s}
+  .blip.b3{background:var(--surge);opacity:.8;animation-duration:.36s,1s}
+  @keyframes jitter{from{transform:translate(-1.5px,1px)}to{transform:translate(1.5px,-1.5px)}}
+  @keyframes flick{0%,100%{opacity:1}45%{opacity:.35}70%{opacity:.9}}
+  .blip.fadeout{animation:fadeout 1s forwards}
+  @keyframes fadeout{to{opacity:0}}
+  .tfoot{display:flex;justify-content:space-between;font-size:8px;letter-spacing:.12em;
+    color:var(--mut);margin-top:6px}
+  .tfoot b{color:var(--surge)}
+
+  /* weapon block */
+  .weap{text-align:right;background:#0a0c10b8;border:1px solid #232c3988;
+    padding:10px 14px;backdrop-filter:blur(2px)}
+  .wname{font-size:12px;letter-spacing:.18em}
+  .wmod{font-size:10px;letter-spacing:.12em;color:var(--surge);margin-top:2px}
+  .ammo{display:flex;align-items:baseline;justify-content:flex-end;gap:8px;margin-top:6px}
+  .mag{font-size:34px;font-weight:600;line-height:1}
+  .reserve{font-size:13px;color:var(--mut)}
+  .mode{font-size:10px;letter-spacing:.2em;color:var(--acc);margin-top:4px}
+
+  /* ================= ACTION BAR — bottom centre ================= */
+  .bar{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);
+    display:flex;align-items:flex-end;gap:8px}
+  .slot{position:relative;width:56px;height:56px;background:#10141bc8;border:1px solid var(--line);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    backdrop-filter:blur(2px)}
+  .slot .si{font-size:16px;line-height:1}
+  .slot .sl2{font-size:7px;letter-spacing:.1em;color:var(--mut)}
+  .slot .key{position:absolute;top:-8px;left:50%;transform:translateX(-50%);
+    font-size:8.5px;font-family:"Cascadia Mono",monospace;color:var(--mut);
+    background:var(--bg);border:1px solid var(--line);padding:0 5px;letter-spacing:.05em}
+  .slot .count{position:absolute;bottom:2px;right:4px;font-size:8.5px;color:var(--txt);
+    font-family:"Cascadia Mono",monospace}
+  .slot .cd{position:absolute;inset:0;background:#0a0c10d9;display:flex;align-items:center;
+    justify-content:center;font-size:13px;font-family:"Cascadia Mono",monospace;color:var(--warn)}
+  .slot.active{border-color:var(--acc);box-shadow:0 0 14px #46e2b233, inset 0 0 0 1px #46e2b244}
+  .slot.active .key{color:var(--acc);border-color:#46e2b255}
+  .slot.wgroup{border-color:#2a3547}
+  .slot.ab{width:60px;height:60px;border-color:#46e2b244}
+  .slot.ab .si{color:var(--acc)}
+  .slot.ab.oncd .si{color:var(--mut)}
+  .slot.empty .si{color:#3a4656}
+  .sep{width:1px;height:40px;background:var(--line);margin:0 4px;align-self:center}
+  .grp{position:absolute;bottom:-15px;left:50%;transform:translateX(-50%);
+    font-size:7.5px;letter-spacing:.22em;color:#8a97a866;white-space:nowrap}
+
+  /* world caption (director pressure as event) */
+  .call{position:absolute;left:50%;top:64%;transform:translateX(-50%);
+    font-size:12px;letter-spacing:.28em;color:var(--surge);opacity:.9;text-transform:uppercase}
+  .call::before,.call::after{content:"—";color:#c77dff66;margin:0 10px}
+
+  .interact{position:absolute;left:50%;top:58%;transform:translateX(-50%);
+    display:flex;align-items:center;gap:10px;background:#0a0c10cc;
+    border:1px solid #46e2b255;padding:7px 14px}
+  .key2{border:1px solid var(--acc);color:var(--acc);font-size:11px;padding:2px 7px;
+    font-family:"Cascadia Mono",monospace}
+  .interact span{font-size:11px;letter-spacing:.14em}
+
+  .objchip{position:absolute;left:26px;top:26px;max-width:300px;background:#0a0c10a0;
+    border-left:2px solid var(--acc);padding:8px 12px}
+  .objchip .k{font-size:9px;letter-spacing:.24em;color:var(--mut)}
+  .objchip .v{font-size:12px;margin-top:3px}
+</style>
+</head>
+<body>
+<div class="scene">
+  <div class="corridor"></div>
+  <div class="strip" style="left:18%;top:58%;width:22%"></div>
+  <div class="strip" style="right:14%;top:64%;width:26%"></div>
+  <div class="lampA" style="left:22%;top:52%"></div>
+  <div class="lampG" style="right:20%;top:70%"></div>
+</div>
+<div class="heat"></div>
+<div class="visor">
+  <div class="corner c-tl"></div><div class="corner c-tr"></div>
+  <div class="corner c-bl"></div><div class="corner c-br"></div>
+</div>
+
+<div class="xh"><span class="dot"></span><i class="n"></i><i class="s"></i><i class="w"></i><i class="e"></i></div>
+
+<!-- objective chip -->
+<div class="objchip">
+  <div class="k">CONTRACT — SIGNAL CORE RECOVERY</div>
+  <div class="v">Decouple the Signal Core</div>
+</div>
+
+<!-- NOTIFICATIONS top-centre -->
+<div class="notify">
+  <div class="toast obj"><span class="ic">◈</span><span>CORE DECOUPLING — 41 / 75 SEC</span></div>
+  <div class="toast threat fading"><span class="ic">▲</span><span>MOTION — CONTACT BEARING 120° · CLOSE</span></div>
+</div>
+
+<!-- LEFT: party frame + own vitals -->
+<div class="leftcol">
+  <div class="panel">
+    <div class="plabel">SQUAD</div>
+    <div class="pm self">
+      <div class="pglyph mono">YOU</div>
+      <div class="pminfo">
+        <div class="pmname"><span>BULWARK</span><span class="hp mono">62</span></div>
+        <div class="pmhp"><i style="width:62%"></i></div>
+        <div class="pmstat">STABILITY 4/6 · LEAD</div>
+      </div>
+    </div>
+    <div class="pm">
+      <div class="pglyph mono">GH</div>
+      <div class="pminfo">
+        <div class="pmname"><span>GHOST</span><span class="hp mono">88</span></div>
+        <div class="pmhp"><i style="width:88%"></i></div>
+        <div class="pmstat">SIGNAL LOST — 12m</div>
+      </div>
+    </div>
+    <div class="pm low">
+      <div class="pglyph mono">MD</div>
+      <div class="pminfo">
+        <div class="pmname"><span>MEDIC</span><span class="hp mono">34</span></div>
+        <div class="pmhp"><i style="width:34%"></i></div>
+        <div class="pmstat" style="color:var(--warn)">BLEEDING</div>
+      </div>
+    </div>
+    <div class="pm down">
+      <div class="pglyph mono">RV</div>
+      <div class="pminfo">
+        <div class="pmname"><span>REAVER</span><span class="hp mono">0</span></div>
+        <div class="pmhp"><i style="width:0%"></i></div>
+        <div class="pmstat" style="color:var(--danger)">DOWN — 40s</div>
+      </div>
+    </div>
+  </div>
+  <div class="panel vitals">
+    <div class="vrow"><span class="barlabel">INTEGRITY</span>
+      <span class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on"></i><i class="pip on warn"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i></span>
+      <span class="num mono">62</span></div>
+    <div class="vrow"><span class="barlabel">STABILITY</span>
+      <span class="pips"><i class="seg on"></i><i class="seg on"></i><i class="seg on"></i><i class="seg on"></i><i class="seg"></i><i class="seg"></i></span>
+      <span class="num mono">4/6</span></div>
+  </div>
+</div>
+
+<!-- RIGHT: motion tracker above weapon -->
+<div class="rightcol">
+  <div class="tracker">
+    <div class="thead"><span class="tname">MOTION TRACKER</span><span class="tbeep mono">● PROX</span></div>
+    <div class="scope">
+      <svg viewBox="0 0 176 176">
+        <circle cx="88" cy="88" r="86" fill="none" stroke="#232c39" stroke-width="1"/>
+        <circle cx="88" cy="88" r="58" fill="none" stroke="#232c39" stroke-width="1"/>
+        <circle cx="88" cy="88" r="30" fill="none" stroke="#232c39" stroke-width="1"/>
+        <line x1="88" y1="2" x2="88" y2="174" stroke="#232c3955" stroke-width="1"/>
+        <line x1="2" y1="88" x2="174" y2="88" stroke="#232c3955" stroke-width="1"/>
+        <!-- range band labels -->
+        <text x="92" y="62" fill="#8a97a866" font-size="7" font-family="monospace">10</text>
+        <text x="92" y="34" fill="#8a97a866" font-size="7" font-family="monospace">20</text>
+        <!-- centre self -->
+        <circle cx="88" cy="88" r="2.5" fill="#e6ecf3"/>
+      </svg>
+      <div class="sweep"></div>
+      <!-- fuzzy jittering blips: rough bearing/range only, no exact pos -->
+      <span class="blip"    style="left:118px;top:52px"></span>
+      <span class="blip b2" style="left:52px;top:96px"></span>
+      <span class="blip b3" style="left:96px;top:122px"></span>
+    </div>
+    <div class="tfoot mono"><span>CONTACTS <b>3</b></span><span>RANGE 20m</span><span>SWEEP 3.4s</span></div>
+  </div>
+  <div class="weap">
+    <div class="wname">VK-7 PULSE CARBINE</div>
+    <div class="wmod">◈ MODIFIER: HOLLOW-POINT CHAMBER</div>
+    <div class="ammo"><span class="mag mono">24</span><span class="reserve mono">/ 96</span></div>
+    <div class="mode">BURST · SUPPRESSED</div>
+  </div>
+</div>
+
+<!-- ACTION BAR bottom-centre -->
+<div class="bar">
+  <div class="slot wgroup active"><span class="key">1</span><span class="si">▲</span><span class="sl2">VK-7</span><span class="grp">PRIMARY</span></div>
+  <div class="slot wgroup"><span class="key">2</span><span class="si">▲</span><span class="sl2">PDW-9</span><span class="grp">SECONDARY</span></div>
+  <div class="sep"></div>
+  <div class="slot"><span class="key">3</span><span class="si">✚</span><span class="sl2">TRAUMA</span><span class="count">2</span></div>
+  <div class="slot"><span class="key">4</span><span class="si">◉</span><span class="sl2">A-VOID</span><span class="count">1</span></div>
+  <div class="slot"><span class="key">5</span><span class="si">⚡</span><span class="sl2">STIM</span><span class="count">3</span><span class="grp">CONSUMABLES</span></div>
+  <div class="sep"></div>
+  <div class="slot ab"><span class="key">Q</span><span class="si">◈</span><span class="sl2">SCANNER</span></div>
+  <div class="slot ab oncd"><span class="key">R</span><span class="si">⛨</span><span class="sl2">AEGIS</span><span class="cd">7</span><span class="grp">ACTIVES</span></div>
+</div>
+
+<div class="interact"><span class="key2">E</span><span>DECOUPLING SIGNAL CORE</span></div>
+<div class="call">movement in the vents — closing</div>
+</body>
+</html>
